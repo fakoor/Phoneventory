@@ -69,15 +69,20 @@ jobs:
           path: ./dist/64bit/phone_number_capture.exe
 
   release:
-    name: Release
+    name: Create GitHub Release
     runs-on: ubuntu-latest
     needs: [build-32bit, build-64bit]
-
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18' # Use Node.js v18 (LTS)
+          node-version: '18'
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install gh
 
       - name: Download 32-bit artifact
         uses: actions/download-artifact@v3
@@ -90,12 +95,11 @@ jobs:
           name: PhoneNumberCaptureExecutable64bit
 
       - name: Create Release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: |
-            PhoneNumberCaptureExecutable32bit/phone_number_capture.exe
-            PhoneNumberCaptureExecutable64bit/phone_number_capture.exe
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: Release ${{ github.run_number }}
-          body: |
-            Automated release of the latest 32-bit and 64-bit executables.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ github.run_number }}" \
+            ./PhoneNumberCaptureExecutable32bit/phone_number_capture.exe \
+            ./PhoneNumberCaptureExecutable64bit/phone_number_capture.exe \
+            --title "Release ${{ github.run_number }}" \
+            --notes "Automated release of the latest 32-bit and 64-bit executables."
