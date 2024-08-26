@@ -1,4 +1,4 @@
-name: Build and Release Windows Executable
+name: Build and Release Windows Executables
 
 on:
   push:
@@ -7,10 +7,11 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch: # Allows manual trigger
 
 jobs:
-  build:
-    name: Build Executable
+  build-32bit:
+    name: Build 32-bit Executable
     runs-on: windows-latest
 
     steps:
@@ -27,33 +28,70 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller
 
-      - name: Build executable
+      - name: Build 32-bit executable
         run: |
-          pyinstaller --onefile phone_number_capture.py
+          pyinstaller --onefile --distpath dist/32bit --workpath build/32bit --specpath build/32bit --win-private-assemblies --exclude-module tkinter --target-arch x86 phone_number_capture.py
         shell: cmd
 
-      - name: Upload artifact
+      - name: Upload 32-bit artifact
         uses: actions/upload-artifact@v3
         with:
-          name: PhoneNumberCaptureExecutable
-          path: ./dist/phone_number_capture.exe
+          name: PhoneNumberCaptureExecutable32bit
+          path: ./dist/32bit/phone_number_capture.exe
+
+  build-64bit:
+    name: Build 64-bit Executable
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build 64-bit executable
+        run: |
+          pyinstaller --onefile --distpath dist/64bit --workpath build/64bit --specpath build/64bit --win-private-assemblies --exclude-module tkinter phone_number_capture.py
+        shell: cmd
+
+      - name: Upload 64-bit artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: PhoneNumberCaptureExecutable64bit
+          path: ./dist/64bit/phone_number_capture.exe
 
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build-32bit, build-64bit]
 
     steps:
-      - name: Download artifact
+      - name: Download 32-bit artifact
         uses: actions/download-artifact@v3
         with:
-          name: PhoneNumberCaptureExecutable
+          name: PhoneNumberCaptureExecutable32bit
+
+      - name: Download 64-bit artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: PhoneNumberCaptureExecutable64bit
 
       - name: Create Release
+        id: create_release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: PhoneNumberCaptureExecutable/phone_number_capture.exe
+          artifacts: |
+            PhoneNumberCaptureExecutable32bit/phone_number_capture.exe
+            PhoneNumberCaptureExecutable64bit/phone_number_capture.exe
           token: ${{ secrets.GITHUB_TOKEN }}
-          name: Release ${{ github.ref }}
+          name: Release ${{ github.run_number }}
           body: |
-            Automated release of the latest executable.
+            Automated release of the latest 32-bit and 64-bit executables.
