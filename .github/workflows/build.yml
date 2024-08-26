@@ -90,7 +90,6 @@ jobs:
           name: PhoneNumberCaptureExecutable64bit
 
       - name: Create Release
-        id: create_release
         uses: ncipollo/release-action@v1
         with:
           artifacts: |
