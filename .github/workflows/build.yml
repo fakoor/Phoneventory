@@ -30,7 +30,7 @@ jobs:
 
       - name: Build 32-bit executable
         run: |
-          pyinstaller --onefile --distpath dist/32bit --workpath build/32bit --specpath build/32bit --win-private-assemblies --exclude-module tkinter --target-arch x86 phone_number_capture.py
+          pyinstaller --onefile --distpath dist/32bit --workpath build/32bit --specpath build/32bit --target-arch x86 phone_number_capture.py
         shell: cmd
 
       - name: Upload 32-bit artifact
@@ -59,7 +59,7 @@ jobs:
 
       - name: Build 64-bit executable
         run: |
-          pyinstaller --onefile --distpath dist/64bit --workpath build/64bit --specpath build/64bit --win-private-assemblies --exclude-module tkinter phone_number_capture.py
+          pyinstaller --onefile --distpath dist/64bit --workpath build/64bit --specpath build/64bit phone_number_capture.py
         shell: cmd
 
       - name: Upload 64-bit artifact
@@ -74,6 +74,11 @@ jobs:
     needs: [build-32bit, build-64bit]
 
     steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # Use Node.js v18 (LTS)
+
       - name: Download 32-bit artifact
         uses: actions/download-artifact@v3
         with:
